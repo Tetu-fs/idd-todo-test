@@ -1,3 +1,13 @@
+# Issue Driven Development TODO App
+## 概要
+ミニマルなタスク管理アプリ
+
+## 機能
+- タスクの作成・編集・削除・完了
+- 作成したタスクの一覧
+- 完了したタスクの一覧
+
+---
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
