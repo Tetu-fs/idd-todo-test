@@ -10,14 +10,14 @@ type Task = {
 function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [title, setTitle] = useState("");
-  // hold timeout ids for scheduled deletions
-  const timers = useRef<Record<string, ReturnType<typeof setTimeout> | null>>({});
+  // hold timeout ids for scheduled deletions (numbers in DOM)
+  const timers = useRef<Record<string, number | null>>({});
 
   useEffect(() => {
     return () => {
       // cleanup timers on unmount
       Object.values(timers.current).forEach((t) => {
-        if (t) clearTimeout(t as unknown as number);
+        if (t) window.clearTimeout(t);
       });
     };
   }, []);
@@ -35,51 +35,66 @@ function App() {
     setTitle("");
   };
 
+  // toggle completion flag only; timer scheduling/cancellation is handled
+  // by an effect that watches `tasks` to avoid side effects inside updater
   const toggleComplete = (id: string) => {
-    setTasks((current) => {
-      const next = current.map((t) => {
-        if (t.id !== id) return t;
-        // toggling
-        const becomingCompleted = !t.completed;
-        if (becomingCompleted) {
-          // schedule deletion in 5s
-          const timeout = setTimeout(() => {
-            setTasks((s) => s.filter((x) => x.id !== id));
-            timers.current[id] = null;
-          }, 5000);
-          timers.current[id] = timeout;
-        } else {
-          // cancel scheduled deletion
-          const maybe = timers.current[id];
-          if (maybe) {
-            clearTimeout(maybe as unknown as number);
-            timers.current[id] = null;
-          }
-        }
-        return { ...t, completed: becomingCompleted };
-      });
-      return next;
-    });
+    setTasks((current) => current.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
   };
+
+  // watch tasks and schedule/cancel timers outside of state updaters
+  useEffect(() => {
+    const ids = new Set(tasks.map((t) => t.id));
+
+    // schedule timers for newly completed tasks, cancel for tasks uncompleted
+    tasks.forEach((t) => {
+      if (t.completed) {
+        if (!timers.current[t.id]) {
+          const timeoutId = window.setTimeout(() => {
+            setTasks((s) => s.filter((x) => x.id !== t.id));
+            timers.current[t.id] = null;
+          }, 5000);
+          timers.current[t.id] = timeoutId;
+        }
+      } else {
+        const maybe = timers.current[t.id];
+        if (maybe) {
+          window.clearTimeout(maybe);
+          timers.current[t.id] = null;
+        }
+      }
+    });
+
+    // clear timers for tasks that were removed
+    Object.keys(timers.current).forEach((key) => {
+      if (!ids.has(key) && timers.current[key]) {
+        window.clearTimeout(timers.current[key] as number);
+        timers.current[key] = null;
+      }
+    });
+  }, [tasks]);
 
   return (
     <main className="container" style={{ maxWidth: 700, margin: "3rem auto" }}>
       <h1>TODO</h1>
 
       <section className="card">
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            addTask();
+          }}
+          style={{ display: "flex", gap: 8, alignItems: "center" }}
+        >
           <input
             type="text"
+            aria-label="タスクのタイトル"
             placeholder="タイトルを入力"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") addTask();
-            }}
             style={{ flex: 1 }}
           />
-          <button onClick={addTask}>作成</button>
-        </div>
+          <button type="submit">作成</button>
+        </form>
       </section>
 
       <section style={{ marginTop: 24 }}>
