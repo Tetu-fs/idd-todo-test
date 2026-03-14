@@ -1,3 +1,7 @@
+# 基本事項
+返答には日本語を使用してください。
+SKILL.mdのルールに則りタスクを行ってください。
+
 <!--VITE PLUS START-->
 
 # Using Vite+, the Unified Toolchain for the Web
