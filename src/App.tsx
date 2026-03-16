@@ -38,7 +38,9 @@ function App() {
   // toggle completion flag only; timer scheduling/cancellation is handled
   // by an effect that watches `tasks` to avoid side effects inside updater
   const toggleComplete = (id: string) => {
-    setTasks((current) => current.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+    setTasks((current) =>
+      current.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
+    );
   };
 
   // watch tasks and schedule/cancel timers outside of state updaters
@@ -74,7 +76,7 @@ function App() {
   }, [tasks]);
 
   return (
-    <main className="container" style={{ maxWidth: 700, margin: "3rem auto" }}>
+    <main className="container">
       <h1>TODO</h1>
 
       <section className="card">
@@ -83,7 +85,6 @@ function App() {
             e.preventDefault();
             addTask();
           }}
-          style={{ display: "flex", gap: 8, alignItems: "center" }}
         >
           <input
             type="text"
@@ -91,20 +92,19 @@ function App() {
             placeholder="タイトルを入力"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            style={{ flex: 1 }}
           />
           <button type="submit">作成</button>
         </form>
       </section>
 
-      <section style={{ marginTop: 24 }}>
+      <section>
         {tasks.length === 0 ? (
           <p>タスクはありません</p>
         ) : (
-          <ul>
+          <>
             {tasks.map((t) => (
-              <li key={t.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
-                <div style={{ flex: 1 }}>
+              <article key={t.id}>
+                <div>
                   <div>
                     {t.completed ? (
                       <del>{t.title}</del>
@@ -115,11 +115,13 @@ function App() {
                   <small>作成: {new Date(t.createdAt).toLocaleString()}</small>
                 </div>
                 <div>
-                  <button onClick={() => toggleComplete(t.id)}>{t.completed ? "取り消す" : "完了"}</button>
+                  <button onClick={() => toggleComplete(t.id)}>
+                    {t.completed ? "取り消す" : "完了"}
+                  </button>
                 </div>
-              </li>
+              </article>
             ))}
-          </ul>
+          </>
         )}
       </section>
     </main>
